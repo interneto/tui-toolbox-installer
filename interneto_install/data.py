@@ -22,6 +22,7 @@ _DATA_FILES = {
     "vscode": "vscode-extensions-pkgs.json",
     "lib": "lib-pkgs.json",
     "icons": "icons.json",
+    "favorites": "favorites.json",
 }
 
 
@@ -96,3 +97,9 @@ def lib_languages() -> dict[str, Any]:
 def icons() -> dict[str, Any]:
     # {"default": "📦", "categories": {<category name>: <emoji>, ...}}
     return _load("icons")
+
+
+@lru_cache(maxsize=None)
+def bundled_favorites() -> dict[str, Any]:
+    # {<surface key>: [<package id>, ...]} — shipped defaults.
+    return _load("favorites")

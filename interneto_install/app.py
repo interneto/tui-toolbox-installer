@@ -26,7 +26,16 @@ from textual.widgets import (
 )
 from textual.widgets.selection_list import Selection
 
-from . import commands, data, detect, icons, runner
+from . import commands, data, detect, favorites, icons, runner
+
+# Maps each tab to the favorites surface key it manages.
+_SURFACE_BY_TAB = {
+    "tab-desktop": "desktop",
+    "tab-vscode": "vscode",
+    "tab-lib": "lib",
+    "tab-browser": "browser",
+    "tab-mobile": "mobile",
+}
 
 
 @dataclass(frozen=True)
@@ -156,7 +165,6 @@ class PackagePicker(Vertical):
             self._apply_columns(1)
             container.mount(Label("No matches.", classes="pane-note"))
             return
-        searching = bool(self._query)
         sections = []
         for category, cat_items in groups.items():
             sel_list = SelectionList[str](
@@ -170,13 +178,12 @@ class PackagePicker(Vertical):
                 ],
                 classes="picker-list",
             )
-            # Collapsed by default for a clean overview; auto-expanded while
-            # searching so matches are visible without extra clicks.
+            # Sections are expanded by default; collapse a header to hide its list.
             sections.append(
                 Collapsible(
                     sel_list,
                     title=f"{category}  ({len(cat_items)})",
-                    collapsed=not searching,
+                    collapsed=False,
                 )
             )
         self._apply_columns(len(sections))
@@ -198,6 +205,19 @@ class PackagePicker(Vertical):
             current |= set(sel_list.selected)
         self._selected = (self._selected - visible) | current
         self.post_message(SelectionCountChanged(len(self._selected)))
+
+    def apply_favorites(self, ids: list[str]) -> int:
+        """Add favorites that exist in this surface to the selection.
+
+        Returns how many applicable favorites were selected.
+        """
+        available = {item.value for item in self._items}
+        to_add = available & set(ids)
+        if to_add:
+            self._selected |= to_add
+            self._rebuild()
+            self.post_message(SelectionCountChanged(len(self._selected)))
+        return len(to_add)
 
     def selected_ids(self) -> list[str]:
         return list(self._selected)
@@ -296,8 +316,15 @@ class InternetoInstallApp(App[None]):
         height: 1fr; overflow-y: auto;
     }
     .picker-groups Collapsible { height: auto; margin: 0; border: round $primary; }
-    .picker-list { height: auto; border: none; background: transparent; padding: 0; }
+    /* Cap each card so a long category scrolls in place instead of stretching
+       its whole grid row — keeps the expanded grid compact and even. */
+    .picker-list {
+        height: auto; max-height: 14; overflow-y: auto;
+        border: none; background: transparent; padding: 0;
+    }
     .lib-lang, .browser-target { margin: 0 0 1 0; width: 40; }
+    #toolbar { height: auto; padding: 0 1; align-horizontal: left; }
+    #toolbar Button { margin: 0 1 0 0; min-width: 14; }
     #count-bar { height: auto; padding: 0 1; background: $boost; }
     #confirm-box, #run-box {
         width: 90; max-width: 100%; height: auto; max-height: 80%;
@@ -314,6 +341,7 @@ class InternetoInstallApp(App[None]):
 
     BINDINGS = [
         ("i", "install", "Install selected"),
+        ("f", "favorites", "Favorites ✨"),
         ("ctrl+r", "rescan", "Rescan devices"),
         ("q", "quit", "Quit"),
     ]
@@ -323,6 +351,7 @@ class InternetoInstallApp(App[None]):
         self.system = detect.detect_system()
         self.lib_lang = next(iter(data.lib_languages()), "javascript")
         self.browser_target = "firefox"
+        self.favorites = favorites.load()
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -367,6 +396,10 @@ class InternetoInstallApp(App[None]):
                 yield Label("", id="mobile-status", classes="pane-note")
                 yield PackagePicker(mobile_items(), "Search mobile apps")
 
+        with Horizontal(id="toolbar"):
+            yield Button("✨ Favorites", id="fav-apply", variant="primary")
+            yield Button("★ Export", id="fav-export")
+            yield Button("⭳ Import", id="fav-import")
         yield Static("Nothing selected", id="count-bar")
         yield Footer()
 
@@ -405,6 +438,51 @@ class InternetoInstallApp(App[None]):
     @on(Select.Changed, "#browser-select")
     def _change_browser(self, event: Select.Changed) -> None:
         self.browser_target = str(event.value)
+
+    # ---- favorites ------------------------------------------------------ #
+    def _active_surface(self) -> str | None:
+        return _SURFACE_BY_TAB.get(self.query_one(TabbedContent).active)
+
+    def action_favorites(self) -> None:
+        surface = self._active_surface()
+        picker = self._active_picker()
+        if not surface or picker is None:
+            return
+        added = picker.apply_favorites(self.favorites.get(surface, []))
+        if added:
+            self.notify(f"✨ Selected {added} favorite(s) in this section.")
+        else:
+            self.notify("No favorites available for this section.", severity="warning")
+
+    @on(Button.Pressed, "#fav-apply")
+    def _fav_apply(self) -> None:
+        self.action_favorites()
+
+    @on(Button.Pressed, "#fav-export")
+    def _fav_export(self) -> None:
+        surface = self._active_surface()
+        picker = self._active_picker()
+        if not surface or picker is None:
+            return
+        selected = sorted(picker.selected_ids())
+        if not selected:
+            self.notify("Nothing selected to export as favorites.", severity="warning")
+            return
+        self.favorites[surface] = selected
+        try:
+            path = favorites.save(self.favorites)
+        except OSError as exc:
+            self.notify(f"Could not save favorites: {exc}", severity="error")
+            return
+        self.notify(f"★ Saved {len(selected)} favorite(s) for '{surface}' → {path}")
+
+    @on(Button.Pressed, "#fav-import")
+    def _fav_import(self) -> None:
+        self.favorites = favorites.load()
+        path = favorites.user_path()
+        source = str(path) if path.is_file() else "bundled defaults"
+        self.notify(f"Imported favorites from {source}.")
+        self.action_favorites()
 
     # ---- actions -------------------------------------------------------- #
     def action_rescan(self) -> None:

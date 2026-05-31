@@ -1,0 +1,7 @@
+{
+  "desktop": ["firefox", "vlc", "git", "neovim", "mpv", "obs-studio", "gimp", "krita", "libreoffice", "signal"],
+  "vscode": ["anthropic.claude-code", "dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "editorconfig.editorconfig", "github.copilot", "dracula-theme.theme-dracula"],
+  "lib": ["react", "vue", "svelte", "next", "zustand", "fastapi", "httpx", "requests", "pytest", "django"],
+  "browser": ["ublock-origin", "bitwarden", "dark-reader", "sponsorblock", "return-youtube-dislike", "i-still-dont-care-about-cookies"],
+  "mobile": ["bitwarden", "firefox", "github", "authenticator"]
+}

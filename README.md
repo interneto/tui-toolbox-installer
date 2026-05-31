@@ -1,4 +1,4 @@
-# Interneto Install (TUI)
+# Interneto · Toolbox Installer (TUI)
 
 A cross-platform terminal app that brings the Interneto toolbox installers to
 your terminal. It **autodetects your operating system and package manager**,
@@ -19,7 +19,28 @@ The package lists are the **same JSON** the web toolbox ships in its
 `public/pkgs/`, bundled into the app. Re-sync them from a sibling
 `interneto-website/` checkout via `python scripts/sync_pkgs.py`.
 
-## Run it
+## Install & run
+
+**One-liner** (installs [uv](https://docs.astral.sh/uv/) if needed, then the app from GitHub, then launches it):
+
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/interneto/tui-toolbox-installer/main/scripts/install.ps1 | iex
+```
+
+```bash
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/interneto/tui-toolbox-installer/main/scripts/install.sh | sh
+```
+
+Already have **uv**? Skip the bootstrap:
+
+```bash
+uvx --from git+https://github.com/interneto/tui-toolbox-installer interneto-install   # run once, no install
+uv tool install git+https://github.com/interneto/tui-toolbox-installer                # install the command
+```
+
+**From a local checkout** (development):
 
 ```bash
 python -m venv .venv && . .venv/bin/activate   # Windows: .venv\Scripts\activate
@@ -27,6 +48,8 @@ pip install -e .
 interneto-install            # launch the TUI
 interneto-install --detect   # just print what was autodetected
 ```
+
+Re-running either one-liner upgrades to the latest version.
 
 ## Keys
 
@@ -66,3 +89,4 @@ Make them your own:
 
 ## Screenshot
 
+![Screenshot](image.png)

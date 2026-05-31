@@ -303,7 +303,7 @@ class RunScreen(ModalScreen[None]):
 # Main app.
 # --------------------------------------------------------------------------- #
 class InternetoInstallApp(App[None]):
-    TITLE = "Interneto Install"
+    TITLE = "Interneto · Toolbox Installer"
     CSS = """
     #system-bar { height: auto; padding: 0 1; background: $panel; color: $text; }
     #system-bar .ok { color: $success; }

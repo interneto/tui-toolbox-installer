@@ -119,21 +119,49 @@ def build_mobile(serial: str, selected_ids: list[str]) -> CommandPlan:
 
 
 # --------------------------------------------------------------------------- #
-# Browser extensions: store URLs (no cross-browser CLI install exists).
+# Browser extensions: download the packaged extension and open it so the
+# browser installs it. Firefox ships .xpi (from AMO), Chromium ships .crx
+# (from Google's update service).
 # --------------------------------------------------------------------------- #
-def browser_store_urls(selected_ids: list[str], browser: str) -> tuple[list[str], list[str]]:
-    """Return (urls, skipped_names) for the chosen browser ('firefox'|'chromium')."""
+@dataclass(frozen=True)
+class Download:
+    name: str  # display name
+    url: str  # source URL
+    filename: str  # suggested local filename
+
+
+# A recent-enough version string keeps Google's crx endpoint happy.
+_CRX_PRODVERSION = "120.0"
+
+
+def browser_downloads(selected_ids: list[str], browser: str) -> tuple[list[Download], list[str]]:
+    """Return (downloads, skipped_names) for the chosen browser ('firefox'|'chromium')."""
     extensions = data.browser_extensions()
-    urls: list[str] = []
+    downloads: list[Download] = []
     skipped: list[str] = []
     for ext_id in selected_ids:
         info = extensions.get(ext_id)
         if not info:
             continue
+        name = info.get("name", ext_id)
         if browser == "firefox" and info.get("firefox_slug"):
-            urls.append(f"https://addons.mozilla.org/firefox/addon/{info['firefox_slug']}/")
+            slug = info["firefox_slug"]
+            downloads.append(Download(
+                name,
+                # AMO "latest" endpoint 302-redirects to the signed .xpi.
+                f"https://addons.mozilla.org/firefox/downloads/latest/{slug}/",
+                f"{slug}.xpi",
+            ))
         elif browser == "chromium" and info.get("chromium_id"):
-            urls.append(f"https://chromewebstore.google.com/detail/{info['chromium_id']}")
+            cid = info["chromium_id"]
+            downloads.append(Download(
+                name,
+                "https://clients2.google.com/service/update2/crx"
+                "?response=redirect&acceptformat=crx2,crx3"
+                f"&prodversion={_CRX_PRODVERSION}"
+                f"&x=id%3D{cid}%26installsource%3Dondemand%26uc",
+                f"{cid}.crx",
+            ))
         else:
-            skipped.append(info.get("name", ext_id))
-    return urls, skipped
+            skipped.append(name)
+    return downloads, skipped

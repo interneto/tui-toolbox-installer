@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import webbrowser
 from dataclasses import dataclass
 
+from rich.syntax import Syntax
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
@@ -12,6 +12,7 @@ from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
+    Collapsible,
     Footer,
     Header,
     Input,
@@ -25,7 +26,7 @@ from textual.widgets import (
 )
 from textual.widgets.selection_list import Selection
 
-from . import commands, data, detect, runner
+from . import commands, data, detect, icons, runner
 
 
 @dataclass(frozen=True)
@@ -110,7 +111,7 @@ class PackagePicker(Vertical):
 
     def compose(self) -> ComposeResult:
         yield Input(placeholder=self._placeholder, classes="picker-search")
-        yield SelectionList[str](classes="picker-list")
+        yield Vertical(classes="picker-groups")
 
     def on_mount(self) -> None:
         self._rebuild()
@@ -129,15 +130,57 @@ class PackagePicker(Vertical):
             return self._items
         return [i for i in self._items if self._query in i.search]
 
+    def _grouped(self) -> dict[str, list[Item]]:
+        # Items arrive pre-sorted by (category, label), so insertion order keeps
+        # categories together and alphabetical.
+        groups: dict[str, list[Item]] = {}
+        for item in self._visible_items():
+            groups.setdefault(item.category, []).append(item)
+        return groups
+
+    def on_resize(self) -> None:
+        self._apply_columns(len(self.query(Collapsible)))
+
+    def _apply_columns(self, section_count: int) -> None:
+        # Flexbox-style responsive grid: up to 5 columns, fewer on narrow
+        # terminals (each category card wants ~24 cells of width).
+        width = self.size.width or 80
+        cols = max(1, min(5, width // 24, section_count or 1))
+        self.query_one(".picker-groups", Vertical).styles.grid_size_columns = cols
+
     def _rebuild(self) -> None:
-        sel_list = self.query_one(SelectionList)
-        sel_list.clear_options()
-        options = [
-            Selection(f"{i.label}  ·  {i.category}", i.value, i.value in self._selected)
-            for i in self._visible_items()
-        ]
-        if options:
-            sel_list.add_options(options)
+        container = self.query_one(".picker-groups", Vertical)
+        container.remove_children()
+        groups = self._grouped()
+        if not groups:
+            self._apply_columns(1)
+            container.mount(Label("No matches.", classes="pane-note"))
+            return
+        searching = bool(self._query)
+        sections = []
+        for category, cat_items in groups.items():
+            sel_list = SelectionList[str](
+                *[
+                    Selection(
+                        f"{icons.icon_for_category(item.category)}  {item.label}",
+                        item.value,
+                        item.value in self._selected,
+                    )
+                    for item in cat_items
+                ],
+                classes="picker-list",
+            )
+            # Collapsed by default for a clean overview; auto-expanded while
+            # searching so matches are visible without extra clicks.
+            sections.append(
+                Collapsible(
+                    sel_list,
+                    title=f"{category}  ({len(cat_items)})",
+                    collapsed=not searching,
+                )
+            )
+        self._apply_columns(len(sections))
+        container.mount(*sections)
 
     @on(Input.Changed)
     def _filter(self, event: Input.Changed) -> None:
@@ -147,10 +190,12 @@ class PackagePicker(Vertical):
     @on(SelectionList.SelectedChanged)
     def _track(self) -> None:
         # Reconcile the currently-visible selections back into the persistent set
-        # without disturbing selections that are filtered out of view.
-        sel_list = self.query_one(SelectionList)
+        # without disturbing selections that are filtered out of view. All mounted
+        # lists together show exactly the visible (filtered) items.
         visible = {i.value for i in self._visible_items()}
-        current = set(sel_list.selected)
+        current: set[str] = set()
+        for sel_list in self.query(SelectionList):
+            current |= set(sel_list.selected)
         self._selected = (self._selected - visible) | current
         self.post_message(SelectionCountChanged(len(self._selected)))
 
@@ -162,16 +207,30 @@ class PackagePicker(Vertical):
 # Confirm + run modals.
 # --------------------------------------------------------------------------- #
 class ConfirmScreen(ModalScreen[bool]):
-    def __init__(self, title: str, preview: str, footnote: str = "") -> None:
+    def __init__(
+        self, title: str, preview: str, footnote: str = "", language: str | None = "bash"
+    ) -> None:
         super().__init__()
         self._title = title
         self._preview = preview
         self._footnote = footnote
+        self._language = language
 
     def compose(self) -> ComposeResult:
         with Vertical(id="confirm-box"):
             yield Label(self._title, id="confirm-title")
-            yield Static(self._preview or "(nothing to run)", id="confirm-preview")
+            if self._preview and self._language:
+                # Syntax-highlight and wrap so long command lists stay readable.
+                body = Syntax(
+                    self._preview,
+                    self._language,
+                    theme="ansi_dark",
+                    word_wrap=True,
+                    background_color="default",
+                )
+                yield Static(body, id="confirm-preview")
+            else:
+                yield Static(self._preview or "(nothing to run)", id="confirm-preview")
             if self._footnote:
                 yield Label(self._footnote, id="confirm-foot")
             with Horizontal(id="confirm-buttons"):
@@ -190,13 +249,14 @@ class ConfirmScreen(ModalScreen[bool]):
 class RunScreen(ModalScreen[None]):
     BINDINGS = [("escape", "close", "Close")]
 
-    def __init__(self, command_list: list[list[str]]) -> None:
+    def __init__(self, lines, title: str = "Installing…") -> None:
         super().__init__()
-        self._commands = command_list
+        self._lines = lines  # any iterable yielding log strings
+        self._title = title
 
     def compose(self) -> ComposeResult:
         with Vertical(id="run-box"):
-            yield Label("Installing…", id="run-title")
+            yield Label(self._title, id="run-title")
             yield RichLog(id="run-log", wrap=True, highlight=False, markup=False)
             yield Button("Close", variant="primary", id="run-close", disabled=True)
 
@@ -206,7 +266,7 @@ class RunScreen(ModalScreen[None]):
     @work(thread=True)
     def _execute(self) -> None:
         log = self.query_one(RichLog)
-        for line in runner.run_commands(self._commands):
+        for line in self._lines:
             self.app.call_from_thread(log.write, line)
         self.app.call_from_thread(self._finish)
 
@@ -231,7 +291,12 @@ class InternetoInstallApp(App[None]):
     TabbedContent { height: 1fr; }
     PackagePicker { height: 1fr; }
     .picker-search { margin: 0 0 1 0; }
-    .picker-list { height: 1fr; border: round $primary; }
+    .picker-groups {
+        layout: grid; grid-size: 5; grid-gutter: 1; grid-rows: auto;
+        height: 1fr; overflow-y: auto;
+    }
+    .picker-groups Collapsible { height: auto; margin: 0; border: round $primary; }
+    .picker-list { height: auto; border: none; background: transparent; padding: 0; }
     .lib-lang, .browser-target { margin: 0 0 1 0; width: 40; }
     #count-bar { height: auto; padding: 0 1; background: $boost; }
     #confirm-box, #run-box {
@@ -389,7 +454,7 @@ class InternetoInstallApp(App[None]):
 
         def _on_confirm(confirmed: bool | None) -> None:
             if confirmed:
-                self.push_screen(RunScreen(plan.commands))
+                self.push_screen(RunScreen(runner.run_commands(plan.commands)))
 
         self.push_screen(
             ConfirmScreen("Review the commands that will run:", plan.preview(), footnote),
@@ -397,22 +462,31 @@ class InternetoInstallApp(App[None]):
         )
 
     def _install_browser(self, selected: list[str]) -> None:
-        urls, skipped = commands.browser_store_urls(selected, self.browser_target)
-        if not urls:
-            self.notify("No store pages for the chosen browser.", severity="warning")
+        downloads, skipped = commands.browser_downloads(selected, self.browser_target)
+        if not downloads:
+            self.notify("No downloadable extensions for the chosen browser.", severity="warning")
             return
-        preview = "\n".join(urls)
-        foot = f"Opens {len(urls)} store page(s) in your browser."
+        ext = "xpi" if self.browser_target == "firefox" else "crx"
+        preview = "\n".join(f"{d.name}\n  {d.filename}  ←  {d.url}" for d in downloads)
+        foot = f"Downloads {len(downloads)} .{ext} file(s) and opens each to finish installing."
         if skipped:
             foot += f"  Skipped: {', '.join(skipped[:6])}"
+        if self.browser_target == "chromium":
+            foot += "\nChrome may refuse a .crx that wasn't installed from the Web Store."
 
         def _on_confirm(confirmed: bool | None) -> None:
             if confirmed:
-                for url in urls:
-                    webbrowser.open(url)
-                self.notify(f"Opened {len(urls)} store page(s).")
+                self.push_screen(
+                    RunScreen(
+                        runner.run_browser_installs(downloads),
+                        title=f"Downloading .{ext} extensions…",
+                    )
+                )
 
-        self.push_screen(ConfirmScreen("Open these store pages?", preview, foot), _on_confirm)
+        self.push_screen(
+            ConfirmScreen("Download and install these extensions?", preview, foot, language=None),
+            _on_confirm,
+        )
 
 
 def run() -> None:

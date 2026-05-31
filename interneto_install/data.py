@@ -21,6 +21,7 @@ _DATA_FILES = {
     "browser": "browser-extensions-pkgs.json",
     "vscode": "vscode-extensions-pkgs.json",
     "lib": "lib-pkgs.json",
+    "icons": "icons.json",
 }
 
 
@@ -89,3 +90,9 @@ def vscode_extensions() -> dict[str, Any]:
 def lib_languages() -> dict[str, Any]:
     # Top-level keys are language ids; each holds label/emoji/manager/categories.
     return _load("lib")
+
+
+@lru_cache(maxsize=None)
+def icons() -> dict[str, Any]:
+    # {"default": "📦", "categories": {<category name>: <emoji>, ...}}
+    return _load("icons")

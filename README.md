@@ -44,9 +44,10 @@ uv tool install git+https://github.com/interneto/tui-toolbox-installer          
 
 ```bash
 python -m venv .venv && . .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e .
+pip install -e ".[dev]"      # app + test tooling
 interneto-install            # launch the TUI
 interneto-install --detect   # just print what was autodetected
+pytest                       # run the smoke tests
 ```
 
 Re-running either one-liner upgrades to the latest version.

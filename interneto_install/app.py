@@ -8,6 +8,7 @@ from rich.syntax import Syntax
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
+from textual.css.query import NoMatches
 from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import (
@@ -273,6 +274,7 @@ class RunScreen(ModalScreen[None]):
         super().__init__()
         self._lines = lines  # any iterable yielding log strings
         self._title = title
+        self._finished = False
 
     def compose(self) -> ComposeResult:
         with Vertical(id="run-box"):
@@ -291,12 +293,14 @@ class RunScreen(ModalScreen[None]):
         self.app.call_from_thread(self._finish)
 
     def _finish(self) -> None:
+        self._finished = True
         self.query_one("#run-title", Label).update("Finished")
         self.query_one("#run-close", Button).disabled = False
 
     @on(Button.Pressed, "#run-close")
     def action_close(self) -> None:
-        self.dismiss(None)
+        if self._finished:
+            self.dismiss(None)
 
 
 # --------------------------------------------------------------------------- #
@@ -427,6 +431,21 @@ class InternetoInstallApp(App[None]):
         self.query_one("#count-bar", Static).update(
             f"{event.count} selected — press [b]i[/b] to install"
             if event.count else "Nothing selected"
+        )
+
+    @on(TabbedContent.TabActivated)
+    def _refresh_count_on_tab_change(self, event: TabbedContent.TabActivated) -> None:
+        # Fires once during the initial tab mount, before #count-bar exists.
+        try:
+            count_bar = self.query_one("#count-bar", Static)
+        except NoMatches:
+            return
+        pickers = event.pane.query(PackagePicker)
+        picker = pickers.first() if pickers else None
+        count = len(picker.selected_ids()) if picker else 0
+        count_bar.update(
+            f"{count} selected — press [b]i[/b] to install"
+            if count else "Nothing selected"
         )
 
     @on(Select.Changed, "#lib-select")

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import platform
 import shutil
+import sys
 from dataclasses import dataclass, field
 
 # Ordered: native distro managers first, then universal fallbacks.
@@ -62,9 +63,14 @@ def detect_system() -> SystemInfo:
 
     if system == "Windows":
         has = shutil.which("winget") is not None
+        release = platform.release()
+        # platform.release() reports "10" on Windows 11 too; use the build
+        # number (11 ships as build >= 22000) to disambiguate.
+        if release == "10" and sys.getwindowsversion().build >= 22000:
+            release = "11"
         return SystemInfo(
             os_name="windows",
-            os_label=f"Windows ({platform.release()})",
+            os_label=f"Windows ({release})",
             pm_key="windows_winget" if has else None,
         )
 
@@ -76,7 +82,7 @@ def detect_system() -> SystemInfo:
             pm_key="macos_brew" if has else None,
         )
 
-    if system == "FreeBSD" or system.endswith("BSD"):
+    if system == "FreeBSD":
         has = shutil.which("pkg") is not None
         return SystemInfo(
             os_name="freebsd",

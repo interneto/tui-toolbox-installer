@@ -30,21 +30,6 @@
     "xnview",
     "zoom"
   ],
-  "categoryEmojis": {
-    "File Management": "📁",
-    "Internet & Communication": "🌐",
-    "System": "⚙️",
-    "Utility": "🔧",
-    "Virtualization": "📦",
-    "Audio": "🎵",
-    "Image": "🖼️",
-    "Video": "🎬",
-    "Development": "💻",
-    "Gaming": "🎮",
-    "Office": "📄",
-    "Reading": "📚",
-    "Science": "🔬"
-  },
   "distroPrefixes": {
     "linux_arch_pacman": "sudo pacman -S",
     "linux_debian_apt": "sudo apt install",
@@ -70,33 +55,6 @@
     { "id": "strawberry", "name": "Strawberry" },
     { "id": "vmware", "name": "VMware" }
   ],
-  "libCategories": {
-    "base": [
-      "Backend Framework",
-      "HTTP Client",
-      "ORM / Database",
-      "Testing",
-      "Logging",
-      "Validation",
-      "Auth / Security"
-    ],
-    "icons": {
-      "Backend Framework": "server",
-      "HTTP Client": "globe",
-      "ORM / Database": "database",
-      "Testing": "flask-conical",
-      "Logging": "scroll-text",
-      "Validation": "shield-check",
-      "Auth / Security": "lock-keyhole",
-      "UI Framework": "layout-panel-left",
-      "Meta-Framework": "layers",
-      "State Management": "git-branch",
-      "Data Fetching": "refresh-cw",
-      "Styling": "palette",
-      "UI Components": "component",
-      "Build Tools": "wrench"
-    }
-  },
   "vscodeExtensionsMeta": {
     "nonFoss": [
       "bmewburn.vscode-intelephense-client",
@@ -480,7 +438,8 @@
       "ruff": "ruff",
       "black": "python",
       "mypy": "python",
-      "isort": "python"
+      "isort": "python",
+      "opendataloader": "opendataloader"
     }
   }
 }

@@ -183,7 +183,7 @@ class PackagePicker(Vertical):
             sections.append(
                 Collapsible(
                     sel_list,
-                    title=f"{category}  ({len(cat_items)})",
+                    title=f"{icons.category_label(category)}  ({len(cat_items)})",
                     collapsed=False,
                 )
             )
@@ -375,7 +375,10 @@ class InternetoInstallApp(App[None]):
                         classes="pane-note",
                     )
                 yield PackagePicker(desktop_items(sys.pm_key), "Search desktop apps")
-            with TabPane("Browser ext", id="tab-browser"):
+            with TabPane("Mobile apps (adb)", id="tab-mobile"):
+                yield Label("", id="mobile-status", classes="pane-note")
+                yield PackagePicker(mobile_items(), "Search mobile apps")
+            with TabPane("Browser (extensions)", id="tab-browser"):
                 yield Select(
                     [("Firefox", "firefox"), ("Chromium / Chrome", "chromium")],
                     value="firefox", allow_blank=False, classes="browser-target",
@@ -386,6 +389,8 @@ class InternetoInstallApp(App[None]):
                     classes="pane-note",
                 )
                 yield PackagePicker(browser_items(), "Search browser extensions")
+            with TabPane("VS Code (extensions)", id="tab-vscode"):
+                yield PackagePicker(vscode_items(), "Search VS Code extensions")
             with TabPane("Libraries", id="tab-lib"):
                 yield Select(
                     [(f"{l.get('emoji','')} {l.get('label', k)}".strip(), k)
@@ -394,11 +399,6 @@ class InternetoInstallApp(App[None]):
                     id="lib-select",
                 )
                 yield PackagePicker(lib_items(self.lib_lang), "Search libraries")
-            with TabPane("VS Code", id="tab-vscode"):
-                yield PackagePicker(vscode_items(), "Search VS Code extensions")
-            with TabPane("Mobile (adb)", id="tab-mobile"):
-                yield Label("", id="mobile-status", classes="pane-note")
-                yield PackagePicker(mobile_items(), "Search mobile apps")
 
         with Horizontal(id="toolbar"):
             yield Button("✨ Favorites", id="fav-apply", variant="primary")

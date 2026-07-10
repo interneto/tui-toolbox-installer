@@ -563,7 +563,7 @@
       "category": "development",
       "subcategory": "AI Assistant",
       "package_manager": {
-        "linux_arch_aur": null,
+        "linux_arch_aur": "claude-code",
         "linux_arch_pacman": null,
         "linux_debian_apt": null,
         "linux_fedora_rpm": null,
@@ -584,7 +584,7 @@
       "category": "development",
       "subcategory": "AI Assistant",
       "package_manager": {
-        "linux_arch_aur": null,
+        "linux_arch_aur": "claude-desktop",
         "linux_arch_pacman": null,
         "linux_debian_apt": null,
         "linux_fedora_rpm": null,

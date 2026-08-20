@@ -6,10 +6,14 @@ lists (no shell) so they can be executed safely and cross-platform.
 
 from __future__ import annotations
 
+import os
+import re
 import shlex
 from dataclasses import dataclass, field
 
 from . import data
+
+_ENV_VAR = re.compile(r"\$([A-Z_][A-Z0-9_]*)")
 
 
 @dataclass
@@ -90,6 +94,64 @@ def build_lib(language: str, selected_names: list[str]) -> CommandPlan:
     plan = CommandPlan()
     if selected_names and manager_cmd:
         plan.commands.append([*shlex.split(manager_cmd), *selected_names])
+    return plan
+
+
+# --------------------------------------------------------------------------- #
+# AI agents (MCP servers / plugins): claude/codex/copilot CLI, or npx.
+# --------------------------------------------------------------------------- #
+def _resolve_install(entry: dict, agent_cli: str) -> dict | None:
+    """Mirror the web toolbox's pick order: exact agent, then agent-less, then first."""
+    installs = entry.get("installs") or []
+    for want in (agent_cli, ""):
+        for inst in installs:
+            if inst.get("agent") == want:
+                return inst
+    return installs[0] if installs else None
+
+
+def build_agents(agent_cli: str, selected_ids: list[str]) -> CommandPlan:
+    agents = data.agents()
+    plan = CommandPlan()
+    needs_env: list[str] = []
+    interactive_only: list[str] = []
+
+    for pkg_id in selected_ids:
+        entry = agents.get(pkg_id)
+        if not entry:
+            continue
+        name = entry.get("name", pkg_id)
+        inst = _resolve_install(entry, agent_cli)
+        if not inst or not inst.get("cmd"):
+            plan.non_installable.append(name)
+            continue
+
+        cmd = inst["cmd"]
+        missing = dict.fromkeys(v for v in _ENV_VAR.findall(cmd) if v not in os.environ)
+        if missing:
+            needs_env.append(f"{name} ({', '.join(f'${v}' for v in missing)})")
+            continue
+        cmd = _ENV_VAR.sub(lambda m: os.environ[m.group(1)], cmd)
+
+        # Some entries are slash-commands meant to be pasted into an already-running
+        # agent session (e.g. Claude Code's `/plugin ...`), not a shell command -
+        # there is nothing this CLI runner can execute for those.
+        steps = [s.strip() for s in cmd.replace(" && ", "\n").split("\n") if s.strip()]
+        if any(s.startswith("/") for s in steps):
+            interactive_only.append(name)
+            continue
+
+        plan.commands.extend(shlex.split(s) for s in steps)
+
+    notes = []
+    if needs_env:
+        notes.append(f"Skipped (missing env var): {', '.join(needs_env)}")
+    if interactive_only:
+        notes.append(
+            f"Skipped (paste into a running agent session instead): {', '.join(interactive_only)}"
+        )
+    if notes:
+        plan.note = "\n".join(notes)
     return plan
 
 

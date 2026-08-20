@@ -116,6 +116,19 @@ def _linux_distro_label() -> str:
     return "Linux"
 
 
+# CLI binary -> agent key used in agents-pkgs.json installs (see commands.build_agents).
+_AGENT_CLIS: list[tuple[str, str]] = [
+    ("claude", "claude"),
+    ("codex", "codex"),
+    ("copilot", "copilot"),
+]
+
+
+def detect_agent_clis() -> list[str]:
+    """Agent CLIs (claude/codex/copilot) found on PATH, in a stable order."""
+    return [agent for binary, agent in _AGENT_CLIS if shutil.which(binary)]
+
+
 def adb_devices() -> list[str]:
     """Return serials of connected Android devices (empty if adb missing)."""
     if shutil.which("adb") is None:

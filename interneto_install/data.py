@@ -21,6 +21,7 @@ _DATA_FILES = {
     "browser": "browser-extensions-pkgs.json",
     "vscode": "vscode-extensions-pkgs.json",
     "lib": "lib-pkgs.json",
+    "agents": "agents-pkgs.json",
     "icons": "icons.json",
     "favorites": "favorites.json",
 }
@@ -91,6 +92,13 @@ def vscode_extensions() -> dict[str, Any]:
 def lib_languages() -> dict[str, Any]:
     # Top-level keys are language ids; each holds label/emoji/manager/categories.
     return _load("lib")
+
+
+@lru_cache(maxsize=None)
+def agents() -> dict[str, Any]:
+    # AI agent MCP servers / plugins - keyed by id, each with its own
+    # per-agent-CLI install commands (see commands.build_agents).
+    return _load("agents").get("agents", {})
 
 
 @lru_cache(maxsize=None)

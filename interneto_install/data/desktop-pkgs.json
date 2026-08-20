@@ -555,7 +555,7 @@
         "freebsd_pkg": "chromium",
         "macos_brew": "chromium",
         "unix_nix_env": "nixos.chromium",
-        "windows_winget": "Google.Chrome"
+        "windows_winget": "Hibbiki.Chromium"
       }
     },
     "claude-code": {
@@ -921,6 +921,24 @@
         "windows_winget": "Dropbox.Dropbox"
       }
     },
+    "dua-cli": {
+      "name": "Dua",
+      "category": "os-and-utilities",
+      "subcategory": "CLI Utility",
+      "package_manager": {
+        "linux_arch_aur": null,
+        "linux_arch_pacman": "dua-cli",
+        "linux_debian_apt": null,
+        "linux_fedora_rpm": null,
+        "linux_gentoo_emerge": null,
+        "linux_flatpak": null,
+        "linux_snap": null,
+        "freebsd_pkg": null,
+        "macos_brew": "dua-cli",
+        "unix_nix_env": "nixos.dua",
+        "windows_winget": "Byron.dua-cli"
+      }
+    },
     "duckduckgo": {
       "name": "DuckDuckGo",
       "category": "web-browsers",
@@ -955,6 +973,24 @@
         "macos_brew": "duckstation",
         "unix_nix_env": "duckstation",
         "windows_winget": "Stenzek.DuckStation"
+      }
+    },
+    "dust": {
+      "name": "Dust",
+      "category": "os-and-utilities",
+      "subcategory": "CLI Utility",
+      "package_manager": {
+        "linux_arch_aur": null,
+        "linux_arch_pacman": "dust",
+        "linux_debian_apt": null,
+        "linux_fedora_rpm": null,
+        "linux_gentoo_emerge": null,
+        "linux_flatpak": null,
+        "linux_snap": null,
+        "freebsd_pkg": null,
+        "macos_brew": "dust",
+        "unix_nix_env": "nixos.dust",
+        "windows_winget": "bootandy.dust"
       }
     },
     "eaglemode": {
@@ -1156,7 +1192,7 @@
       }
     },
     "ffmpeg": {
-      "name": " FFmpeg",
+      "name": "FFmpeg",
       "category": "video-and-movies",
       "subcategory": "Video Encoder/Decoder",
       "package_manager": {
@@ -1170,7 +1206,7 @@
         "freebsd_pkg": "ffmpeg",
         "macos_brew": "ffmpeg",
         "unix_nix_env": "nixos.ffmpeg",
-        "windows_winget": "Mozilla.Firefox"
+        "windows_winget": "FFmpeg.FFmpeg"
       }
     },
     "files": {
@@ -1225,6 +1261,24 @@
         "macos_brew": "firefox",
         "unix_nix_env": "nixos.firefox",
         "windows_winget": "Mozilla.Firefox"
+      }
+    },
+    "fl-studio": {
+      "name": "FL Studio",
+      "category": "audio-and-music",
+      "subcategory": "Digital Audio Workstation",
+      "package_manager": {
+        "linux_arch_aur": null,
+        "linux_arch_pacman": null,
+        "linux_debian_apt": null,
+        "linux_fedora_rpm": null,
+        "linux_gentoo_emerge": null,
+        "linux_flatpak": null,
+        "linux_snap": null,
+        "freebsd_pkg": null,
+        "macos_brew": null,
+        "unix_nix_env": null,
+        "windows_winget": "ImageLine.FLStudio"
       }
     },
     "flameshot": {
@@ -2091,6 +2145,24 @@
         "windows_winget": null
       }
     },
+    "jj": {
+      "name": "Jujutsu",
+      "category": "development",
+      "subcategory": "Version Control",
+      "package_manager": {
+        "linux_arch_aur": "jujutsu-git",
+        "linux_arch_pacman": "jujutsu",
+        "linux_debian_apt": null,
+        "linux_fedora_rpm": null,
+        "linux_gentoo_emerge": "dev-vcs/jj",
+        "linux_flatpak": null,
+        "linux_snap": null,
+        "freebsd_pkg": "jujutsu",
+        "macos_brew": "jj",
+        "unix_nix_env": "nixos.jujutsu",
+        "windows_winget": "jj-vcs.jj"
+      }
+    },
     "joplin": {
       "name": "Joplin",
       "category": "office-and-productivity",
@@ -2289,24 +2361,6 @@
         "windows_winget": "XBMCFoundation.Kodi"
       }
     },
-    "kudu": {
-      "name": "Kudu",
-      "category": "development",
-      "subcategory": "Deployment",
-      "package_manager": {
-        "linux_arch_aur": null,
-        "linux_arch_pacman": null,
-        "linux_debian_apt": null,
-        "linux_fedora_rpm": null,
-        "linux_gentoo_emerge": null,
-        "linux_flatpak": null,
-        "linux_snap": null,
-        "freebsd_pkg": null,
-        "macos_brew": null,
-        "unix_nix_env": null,
-        "windows_winget": "AdventDevelopmentInc.Kudu"
-      }
-    },
     "konsole": {
       "name": "Konsole",
       "category": "os-and-utilities",
@@ -2415,6 +2469,24 @@
         "windows_winget": "Kubernetes.kubectl"
       }
     },
+    "kudu": {
+      "name": "Kudu",
+      "category": "development",
+      "subcategory": "Deployment",
+      "package_manager": {
+        "linux_arch_aur": null,
+        "linux_arch_pacman": null,
+        "linux_debian_apt": null,
+        "linux_fedora_rpm": null,
+        "linux_gentoo_emerge": null,
+        "linux_flatpak": null,
+        "linux_snap": null,
+        "freebsd_pkg": null,
+        "macos_brew": null,
+        "unix_nix_env": null,
+        "windows_winget": "AdventDevelopmentInc.Kudu"
+      }
+    },
     "laragon": {
       "name": "Laragon",
       "category": "development",
@@ -2505,6 +2577,24 @@
         "windows_winget": "LibreWolf.LibreWolf"
       }
     },
+    "llama-cpp": {
+      "name": "llama.cpp",
+      "category": "development",
+      "subcategory": "AI Assistant",
+      "package_manager": {
+        "linux_arch_aur": "llama.cpp",
+        "linux_arch_pacman": null,
+        "linux_debian_apt": null,
+        "linux_fedora_rpm": null,
+        "linux_gentoo_emerge": null,
+        "linux_flatpak": null,
+        "linux_snap": null,
+        "freebsd_pkg": "llama-cpp",
+        "macos_brew": "llama.cpp",
+        "unix_nix_env": "nixos.llama-cpp",
+        "windows_winget": "ggml.llamacpp"
+      }
+    },
     "lmms": {
       "name": "LMMS",
       "category": "audio-and-music",
@@ -2539,6 +2629,24 @@
         "macos_brew": "logseq",
         "unix_nix_env": "nixos.logseq",
         "windows_winget": "Logseq.Logseq"
+      }
+    },
+    "loopmidi": {
+      "name": "loopMIDI",
+      "category": "os-and-utilities",
+      "subcategory": "System Utility",
+      "package_manager": {
+        "linux_arch_aur": null,
+        "linux_arch_pacman": null,
+        "linux_debian_apt": null,
+        "linux_fedora_rpm": null,
+        "linux_gentoo_emerge": null,
+        "linux_flatpak": null,
+        "linux_snap": null,
+        "freebsd_pkg": null,
+        "macos_brew": null,
+        "unix_nix_env": null,
+        "windows_winget": "TobiasErichsen.loopMIDI"
       }
     },
     "lucaschess": {
@@ -2757,24 +2865,6 @@
         "windows_winget": "MongoDB.Server"
       }
     },
-    "moodle": {
-      "name": "Moodle",
-      "category": "education-and-reference",
-      "subcategory": "Learning Management System",
-      "package_manager": {
-        "linux_arch_aur": null,
-        "linux_arch_pacman": null,
-        "linux_debian_apt": null,
-        "linux_fedora_rpm": null,
-        "linux_gentoo_emerge": null,
-        "linux_flatpak": null,
-        "linux_snap": null,
-        "freebsd_pkg": null,
-        "macos_brew": null,
-        "unix_nix_env": null,
-        "windows_winget": null
-      }
-    },
     "mpc-hc": {
       "name": "MPC-HC",
       "category": "video-and-movies",
@@ -2947,7 +3037,7 @@
         "linux_debian_apt": null,
         "linux_fedora_rpm": null,
         "linux_gentoo_emerge": null,
-        "linux_flatpak": null,
+        "linux_flatpak": "io.github.qwersyk.Newelle",
         "linux_snap": null,
         "freebsd_pkg": null,
         "macos_brew": null,
@@ -3339,24 +3429,6 @@
       "subcategory": "Music Streaming",
       "package_manager": {
         "linux_arch_aur": "pear-desktop",
-        "linux_arch_pacman": null,
-        "linux_debian_apt": null,
-        "linux_fedora_rpm": null,
-        "linux_gentoo_emerge": null,
-        "linux_flatpak": null,
-        "linux_snap": null,
-        "freebsd_pkg": null,
-        "macos_brew": null,
-        "unix_nix_env": null,
-        "windows_winget": null
-      }
-    },
-    "photoprism": {
-      "name": "PhotoPrism",
-      "category": "photos-and-graphics",
-      "subcategory": "Photo Manager",
-      "package_manager": {
-        "linux_arch_aur": null,
         "linux_arch_pacman": null,
         "linux_debian_apt": null,
         "linux_fedora_rpm": null,
@@ -4068,7 +4140,7 @@
         "freebsd_pkg": null,
         "macos_brew": null,
         "unix_nix_env": null,
-        "windows_winget": "PaulPacifico.ShutterEncoder"
+        "windows_winget": null
       }
     },
     "shutter-encoder": {
@@ -4395,6 +4467,24 @@
         "windows_winget": "SublimeHQ.SublimeText.4"
       }
     },
+    "superfile": {
+      "name": "Superfile",
+      "category": "file-management",
+      "subcategory": "File Manager",
+      "package_manager": {
+        "linux_arch_aur": null,
+        "linux_arch_pacman": "superfile",
+        "linux_debian_apt": null,
+        "linux_fedora_rpm": null,
+        "linux_gentoo_emerge": null,
+        "linux_flatpak": null,
+        "linux_snap": null,
+        "freebsd_pkg": "superfile",
+        "macos_brew": "superfile",
+        "unix_nix_env": "nixos.superfile",
+        "windows_winget": "yorukot.superfile"
+      }
+    },
     "syncthing": {
       "name": "Syncthing",
       "category": "file-management",
@@ -4411,6 +4501,24 @@
         "macos_brew": "syncthing",
         "unix_nix_env": "nixos.syncthing",
         "windows_winget": "Syncthing.Syncthing"
+      }
+    },
+    "sysinternals-suite": {
+      "name": "Sysinternals Suite",
+      "category": "os-and-utilities",
+      "subcategory": "System Utility",
+      "package_manager": {
+        "linux_arch_aur": null,
+        "linux_arch_pacman": null,
+        "linux_debian_apt": null,
+        "linux_fedora_rpm": null,
+        "linux_gentoo_emerge": null,
+        "linux_flatpak": null,
+        "linux_snap": null,
+        "freebsd_pkg": null,
+        "macos_brew": null,
+        "unix_nix_env": null,
+        "windows_winget": "Microsoft.Sysinternals.Suite"
       }
     },
     "tailscale": {
@@ -4657,12 +4765,12 @@
         "linux_debian_apt": "ungoogled-chromium",
         "linux_fedora_rpm": "ungoogled-chromium",
         "linux_gentoo_emerge": "www-client/ungoogled-chromium",
-        "linux_flatpak": "org.chromium.Chromium",
+        "linux_flatpak": "io.github.ungoogled_software.ungoogled_chromium",
         "linux_snap": null,
         "freebsd_pkg": "ungoogled-chromium",
         "macos_brew": "ungoogled-chromium",
         "unix_nix_env": "ungoogled-nixos.ungoogled-chromium",
-        "windows_winget": "Ungoogled-Chromium"
+        "windows_winget": "eloston.ungoogled-chromium"
       }
     },
     "unity": {
@@ -4735,6 +4843,24 @@
         "macos_brew": "vagrant",
         "unix_nix_env": "nixos.vagrant",
         "windows_winget": "Hashicorp.Vagrant"
+      }
+    },
+    "valhalla-supermassive": {
+      "name": "Valhalla Supermassive",
+      "category": "audio-and-music",
+      "subcategory": "Audio Processing",
+      "package_manager": {
+        "linux_arch_aur": null,
+        "linux_arch_pacman": null,
+        "linux_debian_apt": null,
+        "linux_fedora_rpm": null,
+        "linux_gentoo_emerge": null,
+        "linux_flatpak": null,
+        "linux_snap": null,
+        "freebsd_pkg": null,
+        "macos_brew": "valhalla-supermassive",
+        "unix_nix_env": null,
+        "windows_winget": null
       }
     },
     "ventoy": {

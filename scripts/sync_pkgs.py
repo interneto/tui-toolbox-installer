@@ -21,6 +21,7 @@ FILES = [
     "browser-extensions-pkgs.json",
     "vscode-extensions-pkgs.json",
     "lib-pkgs.json",
+    "agents-pkgs.json",
 ]
 
 

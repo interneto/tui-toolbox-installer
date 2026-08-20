@@ -91,6 +91,14 @@ def mobile_items() -> list[Item]:
     return sorted(items, key=lambda i: (i.category, i.label.lower()))
 
 
+def agents_items() -> list[Item]:
+    items = [
+        Item(agent_id, info.get("name", agent_id), info.get("category", "Other"))
+        for agent_id, info in data.agents().items()
+    ]
+    return sorted(items, key=lambda i: (i.category, i.label.lower()))
+
+
 def lib_items(language: str) -> list[Item]:
     lang = data.lib_languages().get(language, {})
     items = []
@@ -355,6 +363,8 @@ class InternetoInstallApp(App[None]):
         self.system = detect.detect_system()
         self.lib_lang = next(iter(data.lib_languages()), "javascript")
         self.browser_target = "firefox"
+        detected_agents = detect.detect_agent_clis()
+        self.agent_cli = detected_agents[0] if detected_agents else "npx"
         self.favorites = favorites.load()
 
     def compose(self) -> ComposeResult:
@@ -391,6 +401,15 @@ class InternetoInstallApp(App[None]):
                 yield PackagePicker(browser_items(), "Search browser extensions")
             with TabPane("VS Code (extensions)", id="tab-vscode"):
                 yield PackagePicker(vscode_items(), "Search VS Code extensions")
+            with TabPane("AI Agents (MCP/plugins)", id="tab-agents"):
+                yield Select(
+                    [("Claude Code", "claude"), ("Codex CLI", "codex"),
+                     ("GitHub Copilot CLI", "copilot"), ("npx (no CLI needed)", "npx")],
+                    value=self.agent_cli, allow_blank=False, classes="lib-lang",
+                    id="agent-select",
+                )
+                yield Label("", id="agents-status", classes="pane-note")
+                yield PackagePicker(agents_items(), "Search MCP servers / plugins")
             with TabPane("Libraries", id="tab-lib"):
                 yield Select(
                     [(f"{l.get('emoji','')} {l.get('label', k)}".strip(), k)
@@ -409,6 +428,7 @@ class InternetoInstallApp(App[None]):
 
     def on_mount(self) -> None:
         self._refresh_mobile_status()
+        self._refresh_agents_status()
 
     # ---- helpers -------------------------------------------------------- #
     def _active_picker(self) -> PackagePicker | None:
@@ -457,6 +477,18 @@ class InternetoInstallApp(App[None]):
     @on(Select.Changed, "#browser-select")
     def _change_browser(self, event: Select.Changed) -> None:
         self.browser_target = str(event.value)
+
+    def _refresh_agents_status(self) -> None:
+        detected = detect.detect_agent_clis()
+        status = self.query_one("#agents-status", Label)
+        if detected:
+            status.update(f"Detected on PATH: {', '.join(detected)}.")
+        else:
+            status.update("No agent CLI detected on PATH — npx-only entries will still work.")
+
+    @on(Select.Changed, "#agent-select")
+    def _change_agent(self, event: Select.Changed) -> None:
+        self.agent_cli = str(event.value)
 
     # ---- favorites ------------------------------------------------------ #
     def _active_surface(self) -> str | None:
@@ -530,6 +562,8 @@ class InternetoInstallApp(App[None]):
             plan = commands.build_vscode(selected)
         elif active_id == "tab-lib":
             plan = commands.build_lib(self.lib_lang, selected)
+        elif active_id == "tab-agents":
+            plan = commands.build_agents(self.agent_cli, selected)
         elif active_id == "tab-mobile":
             devices = detect.adb_devices()
             if not devices:

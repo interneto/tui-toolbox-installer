@@ -14,6 +14,7 @@ install** instead of handing you a command to copy/paste.
 | VS Code extensions | `code --install-extension`                                                                                   | Desktop (needs the `code` CLI) |
 | Browser extensions | Downloads the `.xpi` (Firefox) / `.crx` (Chromium) and opens it so the browser installs it                   | Desktop                        |
 | Mobile (Android)   | Deep-links each Play Store page on a connected device over `adb`                                             | When a device is attached      |
+| AI agents (MCP/plugins) | Runs each entry's `claude`/`codex`/`copilot`/`npx` install command for the CLI you pick               | Detected agent CLI, or `npx`   |
 
 The package lists are the **same JSON** the web toolbox ships in its
 `public/pkgs/`, bundled into the app. Re-sync them from a sibling
@@ -87,6 +88,12 @@ Make them your own:
   confirm the add-on; Chrome may refuse a `.crx` that didn't come from the Web Store.
 - Android apps can't be silently installed from the CLI, so that surface opens the
   official Play Store pages for the final one-tap install.
+- AI agent entries fall back through claude → codex → copilot → npx like the web
+  toolbox does; two things get skipped rather than misfired: entries needing an
+  env var you haven't set (e.g. `$AFFINITY_MCP_URL`), and entries whose only command
+  for the chosen CLI is a `/plugin ...` slash command meant to be pasted into an
+  already-running agent session, not run as a shell command. Both show up in the
+  confirmation screen's footnote so you know what to do by hand.
 
 ## Screenshot
 

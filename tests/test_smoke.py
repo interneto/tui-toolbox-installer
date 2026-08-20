@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shlex
 
 from interneto_install import commands, data, detect, favorites, icons
 from interneto_install.__main__ import _version
@@ -39,6 +40,7 @@ def test_all_package_data_loads():
     assert data.browser_extensions()
     assert data.mobile_packages()
     assert data.lib_languages()
+    assert data.agents()
 
 
 def test_icons_and_favorites_bundled():
@@ -64,6 +66,54 @@ def test_build_desktop_winget_one_per_package():
     plan = commands.build_desktop("windows_winget", [pkg])
     assert plan.has_commands
     assert all(cmd[:2] == ["winget", "install"] for cmd in plan.commands)
+
+
+def test_build_agents_splits_multi_step_command():
+    # code-simplifier's claude install is "marketplace add X && plugin install Y"
+    plan = commands.build_agents("claude", ["code-simplifier"])
+    assert len(plan.commands) == 2
+    assert plan.commands[0][:3] == ["claude", "plugin", "marketplace"]
+    assert plan.commands[1][:3] == ["claude", "plugin", "install"]
+
+
+def test_build_agents_skips_interactive_only_slash_command():
+    # design's claude install is a `/plugin ...` Claude Code REPL command, not
+    # runnable as a subprocess; its npx install is a real shell command.
+    claude_plan = commands.build_agents("claude", ["design"])
+    assert not claude_plan.has_commands
+    assert "Design" in claude_plan.note
+
+    npx_plan = commands.build_agents("npx", ["design"])
+    assert npx_plan.has_commands
+
+
+def test_build_agents_substitutes_or_skips_env_var(monkeypatch):
+    monkeypatch.delenv("AFFINITY_MCP_URL", raising=False)
+    skipped = commands.build_agents("claude", ["affinity"])
+    assert not skipped.has_commands
+    assert "AFFINITY_MCP_URL" in skipped.note
+
+    monkeypatch.setenv("AFFINITY_MCP_URL", "https://example.com/mcp")
+    filled = commands.build_agents("claude", ["affinity"])
+    assert filled.has_commands
+    assert "https://example.com/mcp" in shlex.join(filled.commands[0])
+
+
+def test_build_agents_lists_every_missing_env_var(monkeypatch):
+    # grafana's claude install needs two env vars - both should be named, not just one.
+    monkeypatch.delenv("GRAFANA_URL", raising=False)
+    monkeypatch.delenv("GRAFANA_SERVICE_ACCOUNT_TOKEN", raising=False)
+    plan = commands.build_agents("claude", ["grafana"])
+    assert not plan.has_commands
+    assert "GRAFANA_URL" in plan.note
+    assert "GRAFANA_SERVICE_ACCOUNT_TOKEN" in plan.note
+
+
+def test_build_agents_falls_back_when_agent_not_supported():
+    # An agent_cli with no matching install falls back to another agent's
+    # command (mirrors the web toolbox's pick order) rather than dropping it.
+    plan = commands.build_agents("does-not-exist", ["exa"])
+    assert plan.has_commands
 
 
 def test_browser_downloads_xpi_and_crx():
@@ -147,6 +197,19 @@ def test_app_search_filters_sections():
             await pilot.pause()
             sections = list(picker.query(Collapsible))
             assert 0 < len(sections) < 14, "search should narrow the sections"
+
+    _run(scenario())
+
+
+def test_app_agents_tab_lists_packages_and_has_no_favorites():
+    async def scenario():
+        app = InternetoInstallApp()
+        async with app.run_test(size=(130, 40)) as pilot:
+            app.query_one(TabbedContent).active = "tab-agents"
+            await pilot.pause()
+            picker = app._active_picker()
+            assert picker is not None and picker.selected_ids() == []
+            assert app._active_surface() is None  # agents has no favorites, like the web toolbox
 
     _run(scenario())
 

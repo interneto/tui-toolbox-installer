@@ -135,35 +135,6 @@
         "Skill"
       ]
     },
-    "ast-grep": {
-      "name": "Ast Grep",
-      "type": "Plugin/Skill",
-      "category": "Development",
-      "agent_compat": {
-        "claude": true,
-        "codex": true,
-        "npx": true
-      },
-      "installs": [
-        {
-          "agent": "claude",
-          "cmd": "npm install -g @ast-grep/cli"
-        },
-        {
-          "agent": "codex",
-          "cmd": "npm install -g @ast-grep/cli"
-        },
-        {
-          "agent": "npx",
-          "cmd": "npm install -g @ast-grep/cli"
-        }
-      ],
-      "url": "",
-      "tags": [
-        "Plugin",
-        "Skill"
-      ]
-    },
     "archify": {
       "name": "Archify",
       "type": "Plugin/Skill",
@@ -193,6 +164,35 @@
         }
       ],
       "url": "https://github.com/tt-a1i/archify",
+      "tags": [
+        "Plugin",
+        "Skill"
+      ]
+    },
+    "ast-grep": {
+      "name": "Ast Grep",
+      "type": "Plugin/Skill",
+      "category": "Development",
+      "agent_compat": {
+        "claude": true,
+        "codex": true,
+        "npx": true
+      },
+      "installs": [
+        {
+          "agent": "claude",
+          "cmd": "npm install -g @ast-grep/cli"
+        },
+        {
+          "agent": "codex",
+          "cmd": "npm install -g @ast-grep/cli"
+        },
+        {
+          "agent": "npx",
+          "cmd": "npm install -g @ast-grep/cli"
+        }
+      ],
+      "url": "",
       "tags": [
         "Plugin",
         "Skill"
@@ -1146,7 +1146,8 @@
       "agent_compat": {
         "claude": true,
         "codex": true,
-        "copilot": true
+        "copilot": true,
+        "npx": true
       },
       "installs": [
         {
@@ -1160,6 +1161,10 @@
         {
           "agent": "copilot",
           "cmd": "copilot mcp add --transport http hyperframes https://hyperframes.heygen.com"
+        },
+        {
+          "agent": "npx",
+          "cmd": "npx -y mcp-remote https://hyperframes.heygen.com"
         }
       ],
       "url": "https://hyperframes.heygen.com",
@@ -1370,6 +1375,29 @@
       "tags": [
         "Plugin",
         "Skill"
+      ]
+    },
+    "paperclip": {
+      "name": "Paperclip",
+      "type": "Platform",
+      "category": "Agent Framework",
+      "description": "Open-source agent orchestration platform — define a goal, hire a team of AI agents (Claude, Codex, Cursor, OpenClaw, or HTTP-based bots), and it runs the org chart, tasks, budgets and approvals. Not a Claude Code/Codex/Copilot plugin itself; it manages those as workers, so it's npx-only here.",
+      "agent_compat": {
+        "claude": false,
+        "codex": false,
+        "copilot": false,
+        "npx": true
+      },
+      "installs": [
+        {
+          "agent": "npx",
+          "cmd": "npx paperclipai@latest onboard --yes"
+        }
+      ],
+      "url": "https://paperclip.ing/",
+      "tags": [
+        "Platform",
+        "Orchestration"
       ]
     },
     "pdf-viewer": {
@@ -1649,6 +1677,39 @@
       "url": "",
       "tags": [
         "MCP"
+      ]
+    },
+    "remotion": {
+      "name": "Remotion Skills",
+      "type": "Plugin/Skill",
+      "category": "Creative",
+      "agent_compat": {
+        "claude": true,
+        "codex": true,
+        "copilot": true,
+        "npx": true
+      },
+      "installs": [
+        {
+          "agent": "claude",
+          "cmd": "npx skills add remotion-dev/skills -a claude-code"
+        },
+        {
+          "agent": "codex",
+          "cmd": "npx skills add remotion-dev/skills -a codex"
+        },
+        {
+          "agent": "copilot",
+          "cmd": "npx skills add remotion-dev/skills -a github-copilot"
+        },
+        {
+          "agent": "npx",
+          "cmd": "npx skills add remotion-dev/skills"
+        }
+      ],
+      "url": "https://www.remotion.dev/docs/ai/skills",
+      "tags": [
+        "Skill"
       ]
     },
     "runnet": {

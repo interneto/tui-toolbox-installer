@@ -1,0 +1,14 @@
+{
+  "note": "Debian/Ubuntu package ids whose apt name comes from a third-party repository. The app does not add repositories; it only flags them so a failure is understandable.",
+  "packages": {
+    "anydesk": "AnyDesk apt repository",
+    "discord": "Discord apt repository",
+    "mullvad-vpn": "Mullvad apt repository",
+    "opera": "Opera apt repository",
+    "spotify": "Spotify apt repository",
+    "steam": "Ubuntu multiverse (enable it first)",
+    "teamviewer": "TeamViewer apt repository",
+    "virtualbox": "Oracle VirtualBox apt repository",
+    "visual-studio-code": "Microsoft apt repository"
+  }
+}

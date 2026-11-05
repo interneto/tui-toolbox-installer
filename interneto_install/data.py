@@ -24,6 +24,8 @@ _DATA_FILES = {
     "agents": "agents-pkgs.json",
     "icons": "icons.json",
     "favorites": "favorites.json",
+    "brew_casks": "brew-casks.json",
+    "apt_external": "apt-external-repos.json",
 }
 
 
@@ -111,3 +113,31 @@ def icons() -> dict[str, Any]:
 def bundled_favorites() -> dict[str, Any]:
     # {<surface key>: [<package id>, ...]} — shipped defaults.
     return _load("favorites")
+
+
+@lru_cache(maxsize=None)
+def brew_casks() -> set[str]:
+    # Homebrew names in the catalog that are casks, not formulae. Missing in
+    # an old install -> treat everything as a formula (the pre-cask behaviour).
+    try:
+        payload = _load("brew_casks")
+    except FileNotFoundError:
+        return set()
+    if isinstance(payload, dict):
+        names = payload.get("casks", [])
+    else:
+        names = payload
+    return {str(name) for name in names if isinstance(name, str)}
+
+
+@lru_cache(maxsize=None)
+def apt_external_repos() -> dict[str, str]:
+    """Package ids whose Debian/Ubuntu name needs a third-party apt repo."""
+    try:
+        payload = _load("apt_external")
+    except FileNotFoundError:
+        return {}
+    packages = payload.get("packages", {}) if isinstance(payload, dict) else {}
+    if not isinstance(packages, dict):
+        return {}
+    return {str(key): str(value) for key, value in packages.items()}

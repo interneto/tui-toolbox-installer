@@ -53,15 +53,10 @@ class Item:
 # --------------------------------------------------------------------------- #
 # Data adapters: turn the toolbox JSON into pickable items per surface.
 # --------------------------------------------------------------------------- #
-def desktop_items(pm_key: str | None) -> list[Item]:
+def desktop_items(pm_keys: str | list[str] | None) -> list[Item]:
     items: list[Item] = []
     for pkg_id, info in data.desktop_packages().items():
-        managers = info.get("package_manager", {})
-        installable = bool(pm_key) and (
-            managers.get(pm_key)
-            or (pm_key == "linux_arch_pacman" and managers.get("linux_arch_aur"))
-        )
-        if not installable:
+        if commands.pick_desktop_manager(pm_keys, info) is None:
             continue
         items.append(Item(pkg_id, info.get("name", pkg_id), info.get("category", "Other")))
     return sorted(items, key=lambda i: (i.category, i.label.lower()))
@@ -276,39 +271,116 @@ class ConfirmScreen(ModalScreen[bool]):
 
 
 class RunScreen(ModalScreen[None]):
-    BINDINGS = [("escape", "close", "Close")]
+    BINDINGS = [("escape", "escape", "Stop / Close")]
 
-    def __init__(self, lines, title: str = "Installing…") -> None:
+    def __init__(
+        self,
+        lines,
+        title: str = "Installing…",
+        control: runner.RunControl | None = None,
+        results: list[runner.CommandResult] | None = None,
+    ) -> None:
         super().__init__()
         self._lines = lines  # any iterable yielding log strings
         self._title = title
+        self._control = control
+        self._results = results
         self._finished = False
+        self._log: RichLog | None = None
+        self._title_widget: Label | None = None
+        self._close_button: Button | None = None
+        self._stop_button: Button | None = None
 
     def compose(self) -> ComposeResult:
         with Vertical(id="run-box"):
             yield Label(self._title, id="run-title")
             yield RichLog(id="run-log", wrap=True, highlight=False, markup=False)
-            yield Button("Close", variant="primary", id="run-close", disabled=True)
+            with Horizontal(id="run-buttons"):
+                yield Button(
+                    "Stop",
+                    variant="error",
+                    id="run-stop",
+                    disabled=self._control is None,
+                )
+                yield Button(
+                    "Close", variant="primary", id="run-close", disabled=True
+                )
 
     def on_mount(self) -> None:
+        self._log = self.query_one(RichLog)
+        self._title_widget = self.query_one("#run-title", Label)
+        self._close_button = self.query_one("#run-close", Button)
+        self._stop_button = self.query_one("#run-stop", Button)
         self._execute()
 
     @work(thread=True)
     def _execute(self) -> None:
-        log = self.query_one(RichLog)
-        for line in self._lines:
-            self.app.call_from_thread(log.write, line)
-        self.app.call_from_thread(self._finish)
+        try:
+            for line in self._lines:
+                self.app.call_from_thread(self._write, line)
+        except Exception as exc:  # keep a broken generator from killing the screen
+            try:
+                self.app.call_from_thread(self._write, f"✗ {exc}")
+            except Exception:
+                pass
+        finally:
+            try:
+                self.app.call_from_thread(self._finish)
+            except Exception:
+                pass
+
+    def _write(self, line: str) -> None:
+        if self._log is not None:
+            self._log.write(line)
 
     def _finish(self) -> None:
+        if self._finished:
+            return
         self._finished = True
-        self.query_one("#run-title", Label).update("Finished")
-        self.query_one("#run-close", Button).disabled = False
+        if self._control is not None and self._control.cancelled:
+            status = "Cancelled"
+        elif self._results and any(item.returncode != 0 for item in self._results):
+            status = "Finished with failures"
+        else:
+            status = "Finished"
+        if self._title_widget is not None:
+            self._title_widget.update(status)
+        if self._close_button is not None:
+            self._close_button.disabled = False
+        if self._stop_button is not None:
+            self._stop_button.disabled = True
+        # A freshly installed tool should be findable in the next tab run.
+        runner.refresh_path()
+
+    def _stop(self) -> None:
+        if self._finished or self._control is None:
+            return
+        self._control.request_stop()
+        if self._title_widget is not None:
+            self._title_widget.update("Stopping…")
+        if self._stop_button is not None:
+            self._stop_button.disabled = True
+
+    @on(Button.Pressed, "#run-stop")
+    def _stop_pressed(self) -> None:
+        self._stop()
 
     @on(Button.Pressed, "#run-close")
     def action_close(self) -> None:
         if self._finished:
             self.dismiss(None)
+
+    def action_escape(self) -> None:
+        if self._finished:
+            self.dismiss(None)
+        else:
+            self._stop()
+
+    def on_unmount(self) -> None:
+        # Leaving the screen (including quitting the app) must not orphan a
+        # package manager that may be holding a lock.
+        if not self._finished and self._control is not None:
+            self._control.request_stop()
 
 
 # --------------------------------------------------------------------------- #
@@ -347,7 +419,8 @@ class InternetoInstallApp(App[None]):
     #confirm-buttons { height: auto; margin: 1 0 0 0; }
     #confirm-buttons Button { margin: 0 1 0 0; }
     #run-log { height: 24; border: round $primary; }
-    #run-close { margin: 1 0 0 0; }
+    #run-buttons { height: auto; margin: 1 0 0 0; }
+    #run-buttons Button { margin: 0 1 0 0; }
     .pane-note { color: $text-muted; padding: 0 0 1 0; }
     """
 
@@ -384,9 +457,25 @@ class InternetoInstallApp(App[None]):
                         "No supported package manager found — desktop installs are disabled.",
                         classes="pane-note",
                     )
-                yield PackagePicker(desktop_items(sys.pm_key), "Search desktop apps")
+                yield PackagePicker(desktop_items(sys.available_managers), "Search desktop apps")
             with TabPane("Mobile apps (adb)", id="tab-mobile"):
-                yield Label("", id="mobile-status", classes="pane-note")
+                devices = detect.adb_device_entries()
+                yield Select(
+                    [(device.label, device.serial) for device in devices]
+                    or [("No device detected", "")],
+                    value=devices[0].serial if devices else "",
+                    allow_blank=False,
+                    classes="lib-lang",
+                    id="mobile-device",
+                )
+                yield Label(
+                    f"Selected: {devices[0].serial} — Ctrl+R to rescan."
+                    if devices
+                    else "No Android device detected (need adb + USB debugging). "
+                    "Ctrl+R to rescan.",
+                    id="mobile-status",
+                    classes="pane-note",
+                )
                 yield PackagePicker(mobile_items(), "Search mobile apps")
             with TabPane("Browser (extensions)", id="tab-browser"):
                 yield Select(
@@ -427,7 +516,8 @@ class InternetoInstallApp(App[None]):
         yield Footer()
 
     def on_mount(self) -> None:
-        self._refresh_mobile_status()
+        if favorites.last_error:
+            self.notify(favorites.last_error, severity="warning", timeout=10)
         self._refresh_agents_status()
 
     # ---- helpers -------------------------------------------------------- #
@@ -439,16 +529,35 @@ class InternetoInstallApp(App[None]):
         return pickers.first() if pickers else None
 
     def _refresh_mobile_status(self) -> None:
-        devices = detect.adb_devices()
+        entries = detect.adb_device_entries()
         status = self.query_one("#mobile-status", Label)
-        if devices:
-            status.update(f"Connected device(s): {', '.join(devices)} — Ctrl+R to rescan.")
+        select = self.query_one("#mobile-device", Select)
+        current = select.value if isinstance(select.value, str) else ""
+        select.set_options(
+            [(device.label, device.serial) for device in entries]
+            or [("No device detected", "")]
+        )
+        if entries:
+            serials = {device.serial for device in entries}
+            if current not in serials:
+                select.value = entries[0].serial
+            status.update(
+                f"Selected: {select.value} — Ctrl+R to rescan."
+            )
         else:
-            status.update("No Android device detected (need adb + USB debugging). Ctrl+R to rescan.")
+            select.value = ""
+            status.update(
+                "No Android device detected (need adb + USB debugging). Ctrl+R to rescan."
+            )
 
     @on(SelectionCountChanged)
     def _update_count(self, event: SelectionCountChanged) -> None:
-        self.query_one("#count-bar", Static).update(
+        # Fires while the initial picker mounts, possibly before #count-bar.
+        try:
+            count_bar = self.query_one("#count-bar", Static)
+        except NoMatches:
+            return
+        count_bar.update(
             f"{event.count} selected — press [b]i[/b] to install"
             if event.count else "Nothing selected"
         )
@@ -530,6 +639,9 @@ class InternetoInstallApp(App[None]):
     @on(Button.Pressed, "#fav-import")
     def _fav_import(self) -> None:
         self.favorites = favorites.load()
+        if favorites.last_error:
+            self.notify(favorites.last_error, severity="warning", timeout=10)
+            return
         path = favorites.user_path()
         source = str(path) if path.is_file() else "bundled defaults"
         self.notify(f"Imported favorites from {source}.")
@@ -538,6 +650,16 @@ class InternetoInstallApp(App[None]):
     # ---- actions -------------------------------------------------------- #
     def action_rescan(self) -> None:
         self._refresh_mobile_status()
+
+    def _authenticate_sudo(self) -> bool:
+        """Suspend the TUI so sudo can prompt on the real terminal, then recheck."""
+        try:
+            with self.suspend():
+                runner.authenticate_sudo()
+        except Exception as exc:  # Textual raises SuspendNotSupported in some terminals
+            self.notify(f"Could not prompt for sudo: {exc}", severity="error")
+            return False
+        return runner.sudo_ready()
 
     def action_install(self) -> None:
         active_id = self.query_one(TabbedContent).active
@@ -557,7 +679,7 @@ class InternetoInstallApp(App[None]):
             if not self.system.pm_key:
                 self.notify("No package manager available.", severity="error")
                 return
-            plan = commands.build_desktop(self.system.pm_key, selected)
+            plan = commands.build_desktop(self.system.available_managers, selected)
         elif active_id == "tab-vscode":
             plan = commands.build_vscode(selected)
         elif active_id == "tab-lib":
@@ -569,7 +691,11 @@ class InternetoInstallApp(App[None]):
             if not devices:
                 self.notify("No Android device connected.", severity="error")
                 return
-            plan = commands.build_mobile(devices[0], selected)
+            select = self.query_one("#mobile-device", Select)
+            serial = select.value if isinstance(select.value, str) else ""
+            if serial not in devices:
+                serial = devices[0]
+            plan = commands.build_mobile(serial, selected)
         else:
             return
 
@@ -584,8 +710,29 @@ class InternetoInstallApp(App[None]):
             footnote = (footnote + "\n" if footnote else "") + f"Skipped (unavailable): {skipped}{extra}"
 
         def _on_confirm(confirmed: bool | None) -> None:
-            if confirmed:
-                self.push_screen(RunScreen(runner.run_commands(plan.commands)))
+            if not confirmed:
+                return
+            if runner.requires_sudo(plan.commands) and not runner.sudo_ready():
+                if not self._authenticate_sudo():
+                    self.notify(
+                        "sudo authentication failed. Run 'sudo -v' in a terminal and retry.",
+                        severity="error",
+                    )
+                    return
+            control = runner.RunControl()
+            results: list[runner.CommandResult] = []
+            self.push_screen(
+                RunScreen(
+                    runner.run_commands(
+                        plan.commands,
+                        plan.secrets,
+                        control=control,
+                        results=results,
+                    ),
+                    control=control,
+                    results=results,
+                )
+            )
 
         self.push_screen(
             ConfirmScreen("Review the commands that will run:", plan.preview(), footnote),
@@ -607,10 +754,12 @@ class InternetoInstallApp(App[None]):
 
         def _on_confirm(confirmed: bool | None) -> None:
             if confirmed:
+                control = runner.RunControl()
                 self.push_screen(
                     RunScreen(
-                        runner.run_browser_installs(downloads),
+                        runner.run_browser_installs(downloads, control=control),
                         title=f"Downloading .{ext} extensions…",
+                        control=control,
                     )
                 )
 

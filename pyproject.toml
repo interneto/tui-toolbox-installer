@@ -22,6 +22,9 @@ dependencies = [
     # Tested against textual 8.2.x; the grid/Collapsible/SelectionList APIs used
     # here are not guaranteed on much older releases.
     "textual>=8.0",
+    # Imported directly by favorites.py; textual also depends on it, but a
+    # direct import should be a direct dependency.
+    "platformdirs>=3.6",
 ]
 
 [project.optional-dependencies]

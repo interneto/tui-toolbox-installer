@@ -49,6 +49,8 @@ jobs:
               "interneto_install/data/icons.json",
               "interneto_install/data/favorites.json",
               "interneto_install/data/desktop-pkgs.json",
+              "interneto_install/data/brew-casks.json",
+              "interneto_install/data/apt-external-repos.json",
           ]
           missing = [n for n in required if n not in names]
           assert not missing, f"missing from wheel: {missing}"

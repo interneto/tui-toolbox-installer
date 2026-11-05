@@ -684,11 +684,11 @@
       "installs": [
         {
           "agent": "claude",
-          "cmd": "claude mcp add daw --scope user -- node %USERPROFILE%\\.local\\daw-mcp\\mcp-server\\dist\\mcp-server.js"
+          "cmd": "claude mcp add daw --scope user -- node \"%USERPROFILE%\\.local\\daw-mcp\\mcp-server\\dist\\mcp-server.js\""
         },
         {
           "agent": "copilot",
-          "cmd": "copilot mcp add daw -- node %USERPROFILE%.localdaw-mcpmcp-serverdistmcp-server.js"
+          "cmd": "copilot mcp add daw -- node \"%USERPROFILE%\\.local\\daw-mcp\\mcp-server\\dist\\mcp-server.js\""
         }
       ],
       "url": "",

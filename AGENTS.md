@@ -7,7 +7,8 @@ website's `public/pkgs/`.
 
 ## Before changing code
 
-1. Read [`README.md`](README.md) and [`docs/agent/HANDOFF.md`](docs/agent/HANDOFF.md).
+1. Read [`README.md`](README.md); open work is in the AgenticHub central roadmap
+   (`AgenticHub/projects/working/ROADMAP.md`).
 2. Install and test:
 
    ```bash
@@ -61,7 +62,7 @@ website's `public/pkgs/`.
 
 ## Closing a session
 
-Update [`docs/agent/HANDOFF.md`](docs/agent/HANDOFF.md) with current state and
-the exact next step, and append a short entry to
-[`docs/agent/JOURNAL.md`](docs/agent/JOURNAL.md). Do not leave the baton only
+Record the open work and the exact next step in the AgenticHub central roadmap
+(`AgenticHub/projects/working/ROADMAP.md`). The local handoff/journal are archive.
+Do not leave the baton only
 in chat.

@@ -426,12 +426,24 @@ def test_favorites_save_leaves_no_temp_files(tmp_path, monkeypatch):
 # Runner: no invisible prompts, no leaked secrets
 # --------------------------------------------------------------------------- #
 def test_run_commands_closes_stdin():
-    lines = list(
-        runner.run_commands(
-            [[sys.executable, "-c", "import sys; print(sys.stdin.isatty())"]]
+    # Put data on this process's real stdin (fd 0): a child that inherited it
+    # would read "leak". isatty() is no use here: Windows reports NUL as a tty.
+    read_end, write_end = os.pipe()
+    os.write(write_end, b"leak")
+    os.close(write_end)
+    saved = os.dup(0)
+    os.dup2(read_end, 0)
+    os.close(read_end)
+    try:
+        lines = list(
+            runner.run_commands(
+                [[sys.executable, "-c", "import sys; print('stdin=' + repr(sys.stdin.read()))"]]
+            )
         )
-    )
-    assert "False" in lines
+    finally:
+        os.dup2(saved, 0)
+        os.close(saved)
+    assert "stdin=''" in lines
 
 
 def test_run_commands_redacts_secret_output():

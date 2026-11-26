@@ -34,6 +34,12 @@ irm https://raw.githubusercontent.com/interneto/tui-toolbox-installer/main/scrip
 curl -fsSL https://raw.githubusercontent.com/interneto/tui-toolbox-installer/main/scripts/install.sh | sh
 ```
 
+The one-liner installs the **tagged release** named in the script (`v0.1.0` today),
+not whatever is on `main`. To try another tag, branch or commit, set
+`INTERNETO_REF` first (`INTERNETO_REF=main` in sh, `$env:INTERNETO_REF = 'main'` in
+PowerShell). Releasing means bumping `version` in `pyproject.toml` and the
+`VERSION` / `$Version` lines of both scripts together; a test fails if they drift.
+
 Already have **uv**? Skip the bootstrap:
 
 ```bash

@@ -8,7 +8,7 @@ website's `public/pkgs/`.
 ## Before changing code
 
 1. Read [`README.md`](README.md); open work is in the AgenticHub central roadmap
-   (`AgenticHub/projects/working/ROADMAP.md`).
+   (`AgenticHub/workspace-panel/working/ROADMAP.md`).
 2. Install and test:
 
    ```bash
@@ -63,6 +63,6 @@ website's `public/pkgs/`.
 ## Closing a session
 
 Record the open work and the exact next step in the AgenticHub central roadmap
-(`AgenticHub/projects/working/ROADMAP.md`). The local handoff/journal are archive.
+(`AgenticHub/workspace-panel/working/ROADMAP.md`). The local handoff/journal are archive.
 Do not leave the baton only
 in chat.
